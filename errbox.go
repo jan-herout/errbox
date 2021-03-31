@@ -181,6 +181,10 @@ func (b *Box) Error() string {
 		return ""
 	}
 
+	if len(b.errLis) == 1 {
+		return b.errLis[0].Error()
+	}
+
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("Got %d errors:\n", len(b.errLis)))
 	for i, err := range b.errLis {
