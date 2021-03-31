@@ -188,6 +188,7 @@ func (b *Box) Error() string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("Got %d errors:\n", len(b.errLis)))
 	for i, err := range b.errLis {
+		sb.WriteString("----------------------------\n")
 		sb.WriteString(fmt.Sprintf("# %d\n", i+1))
 		sb.WriteString(err.Error())
 		sb.WriteString("\n")
