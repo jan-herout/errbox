@@ -36,6 +36,10 @@ func TestBox(t *testing.T) {
 	if WithStack(err).StringField("what") != "thingy" {
 		t.Errorf("got: %#v", f)
 	}
+	if WithStack(err).StringField("n/a") != "" {
+		t.Errorf("got: %#v", f)
+	}
+
 }
 
 func TestAppend(t *testing.T) {
