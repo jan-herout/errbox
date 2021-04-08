@@ -9,8 +9,8 @@ import (
 
 // StackErr is an error with stack trace.
 type StackErr struct {
-	cause      error // the original error
-	annotation []stackAnnotation // annotation of the error
+	cause      error                  // the original error
+	annotation []stackAnnotation      // annotation of the error
 	fields     map[string]interface{} // optional fields attached to the error via Fields.
 }
 
@@ -28,7 +28,7 @@ type stackAnnotation struct {
 //
 // Repeated call of Annotate on the same error only add the annotation to the (already existing) error.
 //
-// Call of Annotate on error which is a *Box  annotates the last error.
+// Call of Annotate on error which is a *Box  annotates all errors.
 //
 // If the message is not empty string, it is added to the stack. The message is formatting string used by fmt.Sprintf,
 // and args... is a variadic parameter which is also provided to the fmt.Sprintf.
@@ -39,12 +39,10 @@ func Annotate(err error, message string, args ...interface{}) error {
 	}
 
 	// what if the err is actually *Box?
-	// then we need to get the last error in the box, and we want to run Annotate on that.
-	if b,ok := err.(*Box); ok{
-		last := b.last()
-		// annotate the last error if there was one
-		if last != nil {
-			last.annotate(2, message, args...)
+	// then we annotate all errors in the box
+	if b, ok := err.(*Box); ok {
+		for i := range b.errLis {
+			b.errLis[i].annotate(2, message, args...)
 		}
 		return b
 	}
@@ -79,8 +77,10 @@ func WithStack(err error) *StackErr {
 //
 // Otherwise, err is returned.
 func Cause(err error) error {
-	if err == nil { return nil }
-	if e,ok := err.(*StackErr); ok {
+	if err == nil {
+		return nil
+	}
+	if e, ok := err.(*StackErr); ok {
 		return e.cause
 	}
 	if e, ok := err.(*Box); ok {
