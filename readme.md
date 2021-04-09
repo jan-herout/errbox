@@ -85,16 +85,29 @@ import (
 )
 
 func thisFails(why string) error {
-	return fmt.Errorf(why)
+	return errbox.Annotate(fmt.Errorf(why),"")
 }
 
 func main() {
-	// use this if you want to sanitize names of files in stack trace
-	errbox.OmitPrefixFromTrace("<---root dir of your repo--->")
-	var err error
+	errbox.OmitPrefixFromTrace("<---root dir of your repo--->")	// Cleanup trace, do not show full paths.
+	
+    // After this runs, err is an error containing two other errors.
+    var err error
 	err = errbox.Append(err, thisFails("just because"))
 	err = errbox.Append(err, thisFails("because why not?"))
-	err = errbox.Annotate(err,"this annotates only the last error!")
+
+	// Annotate adds stack trace to an error. It the error is type *errbox.Box, all errors in the box are annotated.
+	err = errbox.Annotate(err,"this annotates all groupped errors")
+
+    // After this runs, box is an error containing two other errors.
+    // Note that both errors are without stack trace, errbox.Annotate did not run on them.
+    box := fmt.Errorf("recombobulator failure")
+	box = errbox.Append(box, fmt.Errorf("open failed"))
+	
+    	
+    // Content of box variable is flattened before it is added to err.
+    err = errbox.Append(err,box)      
+
 	fmt.Println(err)
 }
 ```
@@ -102,11 +115,25 @@ func main() {
 **Prints**
 
 ```
-Got 2 errors:
+Got 4 errors:
+----------------------------
 # 1
 just because
+ +--@ main.go:10 (thisFails)
+ +--> this annotates all groupped errors
+    @ main.go:23 (main)
+
+----------------------------
 # 2
 because why not?
- +--> this annotates only the last error!
-    @ main.go:19 (main)
+ +--@ main.go:10 (thisFails)
+ +--> this annotates all groupped errors
+    @ main.go:23 (main)
+
+----------------------------
+# 3
+recombobulator failure
+----------------------------
+# 4
+open failed
 ```

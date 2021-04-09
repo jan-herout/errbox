@@ -185,7 +185,6 @@ func (b *StackErr) annotate(skip int, message string, args ...interface{}) {
 	b.annotation = append(b.annotation, annotation)
 }
 
-/* "FuncName" or "Receiver.MethodName" */
 // this comes from https://github.com/palantir/stacktrace/blob/master/stacktrace.go
 // props to them!
 func shortFuncName(f *runtime.Func) string {
