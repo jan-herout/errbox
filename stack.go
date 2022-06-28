@@ -151,6 +151,11 @@ func (b *StackErr) Error() string {
 	return sb.String()
 }
 
+// Unwrap implements errors.Unwrap interface.
+func (b *StackErr) Unwrap() error {
+	return b.cause
+}
+
 // annotate adds the message to the original error
 func (b *StackErr) annotate(skip int, message string, args ...interface{}) {
 	// User code is two stack frames up, as this is called from Annotate

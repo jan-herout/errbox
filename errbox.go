@@ -4,6 +4,7 @@ Package errbox provides errors with stack trace, which can also be groupped (box
 package errbox
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -53,16 +54,15 @@ type Box struct {
 func Append(box, err error) error {
 	// noop if no error
 	if err == nil {
-		return nil
+		return box
 	}
 	newBox := asBox(box)
 
 	// flatten the box
-	if errBox,ok := err.(*Box); ok {
+	if errBox, ok := err.(*Box); ok {
 		newBox.errLis = append(newBox.errLis, errBox.errLis...)
 		return newBox
 	}
-
 
 	// err is not a *Box, convert it to the type *StackErr
 	newErr := WithStack(err)
@@ -194,4 +194,26 @@ func (b *Box) Error() string {
 		sb.WriteString("\n")
 	}
 	return sb.String()
+}
+
+// IsInside checks whether the err is the target (think errors.Is).
+// When the err is *Box, it returns true if any of the errors in the err is the target.
+func IsInside(err error, target error) bool {
+	// if the error is not a *Box, simply use errors package
+	// otherwise, cycle through all errors
+	if be, ok := err.(*Box); ok {
+		for _, se := range be.errLis {
+			if errors.Is(se, target) {
+				return true
+			}
+		}
+		return false
+	} else {
+		return errors.Is(err, target)
+	}
+}
+
+// String implements Stringer interface
+func (b Box) String() string {
+	return b.Error()
 }

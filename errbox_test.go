@@ -5,6 +5,14 @@ import (
 	"testing"
 )
 
+func TestBox2(t *testing.T) {
+	var be Box
+	be.PushIf(fmt.Errorf("bad stuff happened"), "because we were careless")
+	if be.PushIf(fmt.Errorf("after that, another bad thing happened"), "karma!") {
+		fmt.Println(be)
+	}
+}
+
 func TestBox(t *testing.T) {
 	OmitPrefixFromTrace("errbox/")
 	ShowStack(true)
@@ -40,6 +48,16 @@ func TestBox(t *testing.T) {
 		t.Errorf("got: %#v", f)
 	}
 
+	var storedErr = fmt.Errorf("this is inside")
+	var missingErr = fmt.Errorf("this is missing")
+
+	b.PushIf(storedErr, "")
+	if !IsInside(b, storedErr) {
+		t.Errorf("expected to see this in the box: %s", storedErr)
+	}
+	if IsInside(b, missingErr) {
+		t.Errorf("expected NOT to see this in th box: %s", storedErr)
+	}
 }
 
 func TestAppend(t *testing.T) {
