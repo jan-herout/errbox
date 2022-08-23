@@ -1,15 +1,43 @@
 package errbox
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 )
 
-func TestBox2(t *testing.T) {
-	var be Box
-	be.PushIf(fmt.Errorf("bad stuff happened"), "because we were careless")
-	if be.PushIf(fmt.Errorf("after that, another bad thing happened"), "karma!") {
-		fmt.Println(be)
+func TestErrorsIs(t *testing.T) {
+	e1 := fmt.Errorf("e1")
+	var e2 error
+	e2 = Append(e2, e1)
+	assertEquals := false
+	for _, err := range Errors(e2) {
+		if errors.Is(err, e1) {
+			assertEquals = true
+		}
+	}
+	if !assertEquals {
+		t.Errorf("box does not contain e1")
+	}
+}
+
+func TestAccumulate(t *testing.T) {
+	retErr := fmt.Errorf("error")
+	counter := 0
+	okFunc := func() error {
+		counter = counter + 1
+		return nil
+	}
+	failingFunc := func() error {
+		counter = counter + 1
+		return retErr
+	}
+	err := Run(okFunc).Then(okFunc).Then(failingFunc).Then(okFunc).Then(failingFunc).First()
+	if counter != 3 {
+		t.Errorf("expected counterto be equal to 3")
+	}
+	if !errors.Is(err, retErr) {
+		t.Errorf("call chain did not return expected error")
 	}
 }
 

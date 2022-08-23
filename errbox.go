@@ -1,5 +1,5 @@
 /*
-Package errbox provides errors with stack trace, which can also be groupped (boxed) and processed later.
+Package errbox provides errors with stack trace, which can also be grouped (boxed) and processed later.
 */
 package errbox
 
@@ -74,7 +74,7 @@ func Append(box, err error) error {
 //
 // If err is of type *Box, returns slice with all errors appended to the *Box.
 //
-// If err is not of type *Box, slice containing the err is returned.
+// If err is not of type *Box, slice containing err is returned.
 func Errors(err error) []error {
 	if err == nil {
 		return nil
@@ -216,4 +216,42 @@ func IsInside(err error, target error) bool {
 // String implements Stringer interface
 func (b Box) String() string {
 	return b.Error()
+}
+
+// AccumulateFunc is any function that takes no arguments and returns an error.
+type AccumulateFunc func() error
+
+// Run runs the accFunc, and stores the value of the error (if any was returned by the accFunc) inside the Box.
+// Then it returns pointer to the Box.
+// This function can be used alongside Then and First methods to chain function calls up to the point when
+// one of the functions fails.
+func Run(accFunc AccumulateFunc) *Box {
+	var b Box
+	b.PushIf(accFunc(), "")
+	return &b
+}
+
+// Then runs the accFunc if and only if the Box is empty (it contains no errors so far).
+// If accFunx returns an error, it is appended to the Box.
+//
+// This function can be used alongside with Run to chain calls, like so:
+//
+//	err := box.Run(func1).Then(func2).Then(func3).First()
+//
+// This would make sure that calls are made up to the point when one of the functions fails.
+// Variable err would then contain the first error which was encountered.
+func (b *Box) Then(accFunc AccumulateFunc) *Box {
+	if len(b.errLis) > 0 {
+		return b
+	}
+	b.PushIf(accFunc(), "")
+	return b
+}
+
+// First returns the first error that was encountered.
+func (b *Box) First() error {
+	if len(b.errLis) == 0 {
+		return nil
+	}
+	return b.errLis[0]
 }
